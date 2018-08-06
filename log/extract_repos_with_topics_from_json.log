@@ -1,0 +1,14 @@
+INFO:root:freeCodeCamp/freeCodeCamp : careers,certification,community,curriculum,d3,education,javascript,learn-to-code,math,nodejs,nonprofits,programming,react,teachers
+INFO:root:https://api.github.com/repos/freeCodeCamp/freeCodeCamp/readme
+INFO:root:Downloaded README of freeCodeCamp/freeCodeCamp into ../../output/downloaded_README/freeCodeCamp.freeCodeCamp.md
+INFO:root:twbs/bootstrap : bootstrap,css,css-framework,html,javascript,jekyll-site,scss
+INFO:root:https://api.github.com/repos/twbs/bootstrap/readme
+INFO:root:Downloaded README of twbs/bootstrap into ../../output/downloaded_README/twbs.bootstrap.md
+INFO:root:EbookFoundation/free-programming-books : books,education,list,resource
+INFO:root:https://api.github.com/repos/EbookFoundation/free-programming-books/readme
+INFO:root:Downloaded README of EbookFoundation/free-programming-books into ../../output/downloaded_README/EbookFoundation.free-programming-books.md
+INFO:root:vuejs/vue : framework,frontend,javascript,vue
+INFO:root:https://api.github.com/repos/vuejs/vue/readme
+INFO:root:Downloaded README of vuejs/vue into ../../output/downloaded_README/vuejs.vue.md
+INFO:root:facebook/react : declarative,frontend,javascript,library,react,ui
+INFO:root:https://api.github.com/repos/facebook/react/readme

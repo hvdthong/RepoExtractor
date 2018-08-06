@@ -1,0 +1,100 @@
+## littler [![Build Status](https://travis-ci.org/eddelbuettel/littler.png)](https://travis-ci.org/eddelbuettel/littler)    [![License](http://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](http://www.gnu.org/licenses/gpl-2.0.html) [![CRAN](http://www.r-pkg.org/badges/version/littler)](https://cran.r-project.org/package=littler) [![Downloads](http://cranlogs.r-pkg.org/badges/littler?color=brightgreen)](http://www.r-pkg.org/pkg/littler)
+
+A scripting and command-line front-end for GNU R permitting use of R in
+command-line contexts.
+
+### So What Is It For?
+
+```r
+#!/usr/bin/env r              ## for use in scripts
+
+other input | r               ## for use in pipes
+
+r somefile.R                  ## for running files
+
+r -e 'expr'                   ## for evaluating expressions
+
+r --help                      ## to show a quick synopsis
+```
+
+### Examples? 
+
+Plenty. See the [examples vignette](https://cran.r-project.org/package=littler/vignettes/littler-examples.html)
+for a full set of introductory examples. Also 
+see the [examples/ directory](https://github.com/eddelbuettel/littler/tree/master/inst/examples) for a full 28
+example scripts, as well as maybe the
+[older tests directory](https://github.com/eddelbuettel/littler/tree/master/inst/script-tests)
+both of which are installed with the package.
+
+Some scripts I uses daily or near daily (in alphabetical order):
+
+```
+build.r                                ## builds from the current directory
+c4c.r                                  ## submits current directory to winbuilder
+compAttr.r                             ## run compileAttributes() for a Rcpp package
+dratInstert.r 1.2-3.tar.gz -r /srv     ## inserts package into drat repo
+install.r abc def                      ## installs packages abc and def
+install.r abc_1.2-3.tar.gz             ## installs given tarball
+install2.r -l /tmp/lib abc def         ## installs abc and def into /tmp/lib
+rcc.r abc_1.2-3.tar.gz                 ## run's R CMD check via Gabor's rcmdcheck
+render.r foo.Rmd                       ## calls rmarkdown::render()
+roxy.r                                 ## run roxyenize() for a package (only Rd creation)
+update.r                               ## updates any currently installed packages 
+```
+
+### Installation
+
+#### Version 0.3.0 or later
+
+The package resides on the CRAN network and can be installed via
+
+```
+install.packages("littler")
+```
+
+#### Previous Versions up to 0.2.3 
+
+In general, simply running the script `bootstrap` will configure and build the
+executable. Running `make install` (possibly as `sudo make install`) will
+install the resulting binary.
+
+On Linux systems, ensure you have the `autotools-dev` package (or its
+equivalent on non-Debian/Ubuntu systems).  On OS X, you may need to run `brew
+install automake autoconf` to get all the tools. 
+
+#### Alternate Naming
+
+On some operating systems such as OS X, `r` is not different from `R`.  As
+this risk confusing the main binary `R` for the R system with our smaller
+scripting frontend `r`, we suggest to consider running `configure
+--program-prefix="l"` which this leads to installation of a binary `lr`
+instead of `r`.
+
+#### Alternate R Version
+
+As littler uses autoconf its `AC_PATH_PROG()` macro to find `R`, one can
+simply adjust the `PATH` when calling `configure` (or, rather, `bootstrap`)
+to have another version of R used. For example, on a server with R-devel in
+this location, the following builds littler using this R-devel version:
+`PATH="/usr/local/lib/R-devel/bin/:$PATH" ./bootstrap`. 
+
+### More Information
+
+For more information about littler, please see
+
+* [Dirk's littler page](http://dirk.eddelbuettel.com/code/littler.html)
+* [Dirk's page with littler examples](http://dirk.eddelbuettel.com/code/littler.examples.html)
+
+(but note that the latter now overlaps with the
+[example vignette](https://cran.r-project.org/package=littler/vignettes/littler-examples.html)).
+
+### Authors
+
+Jeff Horner and Dirk Eddelbuettel
+
+### License
+
+GPL (>= 2)
+
+
+

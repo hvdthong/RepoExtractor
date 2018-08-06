@@ -1,0 +1,490 @@
+![banner](pino-banner.png)
+
+# pino&nbsp;&nbsp;[![Build Status](https://travis-ci.org/pinojs/pino.svg?branch=master)](https://travis-ci.org/pinojs/pino)&nbsp;[![Coverage Status](https://coveralls.io/repos/github/pinojs/pino/badge.svg?branch=master)](https://coveralls.io/github/pinojs/pino?branch=master) [![TypeScript definitions on DefinitelyTyped](http://definitelytyped.org/badges/standard.svg)](http://definitelytyped.org)
+
+[Extremely fast](#benchmarks) node.js logger, inspired by Bunyan.
+It also includes a shell utility to pretty-print its log files.
+
+![cli](demo.png)
+
+* [Installation](#install)
+* [Usage](#usage)
+* [Benchmarks](#benchmarks)
+* [API ⇗](docs/API.md)
+* [CLI ⇗](docs/cli.md)
+* [Extreme mode explained ⇗](docs/extreme.md)
+* [Pino Howtos ⇗](docs/howtos.md)
+* [Transports with Pino](#transports)
+* [Pino in the browser](#browser)
+* [Caveats](#caveats)
+* [Team](#team)
+* [Contributing](#contributing)
+* [Acknowledgements](#acknowledgements)
+* [License](#license)
+
+## Install
+
+```
+npm install pino --save
+```
+
+If you need support for Node.js v0.12 or v0.10, please install the latest 2.x release using the `legacy` tag:
+
+```
+npm install pino@legacy --save
+```
+
+Documentation for the legacy version 2.x is available on the [`v2.x.x` branch](https://github.com/pinojs/pino/tree/v2.x.x).
+
+## Usage
+
+```js
+'use strict'
+
+var pino = require('pino')()
+
+pino.info('hello world')
+pino.error('this is at error level')
+pino.info('the answer is %d', 42)
+pino.info({ obj: 42 }, 'hello world')
+pino.info({ obj: 42, b: 2 }, 'hello world')
+pino.info({ obj: { aa: 'bbb' } }, 'another')
+setImmediate(function () {
+  pino.info('after setImmediate')
+})
+pino.error(new Error('an error'))
+
+var child = pino.child({ a: 'property' })
+child.info('hello child!')
+
+var childsChild = child.child({ another: 'property' })
+childsChild.info('hello baby..')
+
+```
+
+This produces:
+
+```
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"hello world","time":1459529098958,"v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":50,"msg":"this is at error level","time":1459529098959,"v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"the answer is 42","time":1459529098960,"v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"hello world","time":1459529098960,"obj":42,"v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"hello world","time":1459529098960,"obj":42,"b":2,"v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"another","time":1459529098960,"obj":{"aa":"bbb"},"v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":50,"msg":"an error","time":1459529098961,"type":"Error","stack":"Error: an error\n    at Object.<anonymous> (/Users/davidclements/z/nearForm/pino/example.js:14:12)\n    at Module._compile (module.js:435:26)\n    at Object.Module._extensions..js (module.js:442:10)\n    at Module.load (module.js:356:32)\n    at Function.Module._load (module.js:311:12)\n    at Function.Module.runMain (module.js:467:10)\n    at startup (node.js:136:18)\n    at node.js:963:3","v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"hello child!","time":1459529098962,"a":"property","v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"hello baby..","time":1459529098962,"another":"property","a":"property","v":1}
+{"pid":94473,"hostname":"MacBook-Pro-3.home","level":30,"msg":"after setImmediate","time":1459529098963,"v":1}
+
+```
+
+<a name="benchmarks"></a>
+## Benchmarks
+
+As far as we know, it is one of the fastest loggers in town:
+
+`pino.info('hello world')`:
+
+```
+BASIC benchmark averages
+Bunyan average: 549.042ms
+Winston average: 467.873ms
+Bole average: 201.529ms
+Debug average: 253.724ms
+LogLevel average: 282.653ms
+Pino average: 188.956ms
+PinoExtreme average: 108.809ms
+```
+
+`pino.info({'hello': 'world'})`:
+
+```
+OBJECT benchmark averages
+BunyanObj average: 564.363ms
+WinstonObj average: 464.824ms
+BoleObj average: 230.220ms
+LogLevelObject average: 474.857ms
+PinoObj average: 201.442ms
+PinoUnsafeObj average: 202.687ms
+PinoExtremeObj average: 108.689ms
+PinoUnsafeExtremeObj average: 106.718ms
+```
+
+`pino.info(aBigDeeplyNestedObject)`:
+
+```
+DEEPOBJECT benchmark averages
+BunyanDeepObj average: 5293.279ms
+WinstonDeepObj average: 9020.292ms
+BoleDeepObj average: 9169.043ms
+LogLevelDeepObj average: 15260.917ms
+PinoDeepObj average: 8467.807ms
+PinoUnsafeDeepObj average: 6159.227ms
+PinoExtremeDeepObj average: 8354.557ms
+PinoUnsafeExtremeDeepObj average: 6214.073ms
+```
+
+`pino.info('hello %s %j %d', 'world', {obj: true}, 4, {another: 'obj'})`:
+
+```
+BunyanInterpolateExtra average: 778.408ms
+WinstonInterpolateExtra average: 627.956ms
+BoleInterpolateExtra average: 429.757ms
+PinoInterpolateExtra average: 316.043ms
+PinoUnsafeInterpolateExtra average: 316.809ms
+PinoExtremeInterpolateExtra average: 218.468ms
+PinoUnsafeExtremeInterpolateExtra average: 215.040ms
+```
+
+In many cases, pino is over 5x faster than alternatives.
+
+For a fair comparison, [LogLevel](http://npm.im/loglevel) was extended
+to include a timestamp and [bole](http://npm.im/bole) had
+`fastTime` mode switched on.
+
+<a name="transports"></a>
+## Transports
+
+A transport in most logging libraries is something that runs in-process to
+perform some operation with the finalized log line. For example, a transport
+might send the log line to a standard syslog server after processing the log
+line and reformatting it. For details on implementing, and some already written,
+transports, see our [Transports⇗](docs/transports.md) document.
+
+> **Pino *does not* natively support in-process transports.**
+
+Pino does not support in-process transports because Node processes are
+single threaded processes (ignoring some technical details). Given this
+restriction, one of the methods Pino employs to achieve its speed is to
+purposefully offload the handling of logs, and their ultimate destination, to
+external processes so that the threading capabilities of the OS can be
+used (or other CPUs).
+
+One consequence of this methodology is that "error" logs do not get written to
+`stderr`. However, since Pino logs are in a parseable format, it is possible to
+use tools like [pino-tee][pino-tee] or [jq][jq] to work with the logs. For
+example, to view only logs marked as "error" logs:
+
+```
+$ node an-app.js | jq 'select(.level == 50)'
+```
+
+In short, the way Pino generates logs:
+
+1. Reduces the impact of logging on your application to an extremely minimal amount.
+2. Gives greater flexibility in how logs are processed and stored.
+
+Given all of the above, Pino clearly promotes out-of-process log processing.
+However, it is possible to wrap Pino and perform processing in-process.
+For an example of this, see [pino-multi-stream][pinoms].
+
+[pino-tee]: https://npm.im/pino-tee
+[jq]: https://stedolan.github.io/jq/
+[pinoms]: https://npm.im/pino-multi-stream
+
+<a name="browser"></a>
+## Pino in the browser
+
+Pino is compatible with [`browserify`](http://npm.im) for browser side usage:
+
+This can be useful with isomorphic/universal JavaScript code.
+
+By default, in the browser,
+`pino` uses corresponding [Log4j](https://en.wikipedia.org/wiki/Log4j) `console` methods (`console.error`, `console.warn`, `console.info`, `console.debug`, `console.trace`) and uses `console.error` for any `fatal` level logs.
+
+### Browser Options
+
+Pino can be passed a `browser` object in the options object,
+which can have the following properties: 
+
+#### `asObject` (Boolean)
+
+```js
+var pino = require('pino')({browser: {asObject: true}})
+```
+
+The `asObject` option will create a pino-like log object instead of
+passing all arguments to a console method, for instance:
+
+```js
+pino.info('hi') // creates and logs {msg: 'hi', level: 30, time: <ts>}
+```
+
+When `write` is set, `asObject` will always be `true`.
+
+#### `write` (Function | Object)
+
+Instead of passing log messages to `console.log` they can be passed to
+a supplied function.
+
+If `write` is set to a single function, all logging objects are passed
+to this function.
+
+```js
+var pino = require('pino')({browser: {write: (o) => {
+  // do something with o
+}}})
+```
+
+If `write` is an object, it can have methods that correspond to the
+levels. When a message is logged at a given level, the corresponding
+method is called. If a method isn't present, the logging falls back
+to using the `console`.
+
+
+```js
+var pino = require('pino')({browser: {write: {
+  info: function (o) {
+    //process info log object
+  },
+  error: function (o) {
+    //process error log object
+  }
+}}})
+```
+
+#### `serialize`: (Boolean | Array)
+
+The serializers provided to `pino` are ignored by default in the browser, including
+the standard serializers provided with Pino. Since the default destination for log
+messages is the console, values such as `Error` objects are enhanced for inspection, 
+which they otherwise wouldn't be if the Error serializer was enabled.
+
+We can turn all serializers on, 
+
+```js
+var pino = require('pino')({
+  browser: {
+    serialize: true
+  }
+})
+```
+
+Or we can selectively enable them via an array:
+
+```js
+var pino = require('pino')({
+  serializers: {
+    custom: myCustomSerializer,
+    another: anotherSerializer
+  },
+  browser: {
+    serialize: ['custom']
+  }
+})
+// following will apply myCustomSerializer to the custom property,
+// but will not apply anotherSerizlier to another key
+pino.info({custom: 'a', another: 'b'})  
+```
+
+When `serialize` is `true` the standard error serializer is also enabled (see https://github.com/pinojs/pino/blob/master/docs/API.md#stdSerializers).
+This is a global serializer which will apply to any `Error` objects passed to the logger methods.
+
+If `serialize` is an array the standard error serializer is also automatically enabled, it can
+be explicitly disabled by including a string in the serialize array: `!stdSerializers.err`, like so:
+
+```js
+var pino = require('pino')({
+  serializers: {
+    custom: myCustomSerializer,
+    another: anotherSerializer
+  },
+  browser: {
+    serialize: ['!stdSerializers.err', 'custom'] //will not serialize Errors, will serialize `custom` keys
+  }
+})
+```
+
+The `serialize` array also applies to any child logger serializers (see https://github.com/pinojs/pino/blob/master/docs/API.md#discussion-2
+for how to set child-bound serializers).
+
+Unlike server pino the serializers apply to every object passed to the logger method,
+if the `asObject` option is `true`, this results in the serializers applying to the
+first object (as in server pino).      
+
+For more info on serializers see https://github.com/pinojs/pino/blob/master/docs/API.md#parameters.
+
+#### `transmit` (Object)
+
+An object with `send` and `level` properties.
+
+The `transmit.level` property specifies the minimum level (inclusive) of when the `send` function
+should be called, if not supplied the `send` function be called based on the main logging `level`
+(set via `options.level`, defaulting to `info`). 
+
+The `transmit` object must have a `send` function which will be called after 
+writing the log message. The `send` function is passed the level of the log 
+message and a `logEvent` object. 
+
+The `logEvent` object is a data structure representing a log message, it represents
+the arguments passed to a logger statement, the level 
+at which they were logged and the heirarchy of child bindings. 
+
+The `logEvent` format is structured like so: 
+
+```js
+{ 
+  ts = Number,
+  messages = Array, 
+  bindings = Array, 
+  level: { label = String, value = Number}
+}
+```
+
+The `ts` property is a unix epoch timestamp in milliseconds, the time is taken from the moment the
+logger method is called.
+
+The `messages` array is all arguments passed to logger method, (for instance `logger.info('a', 'b', 'c')`
+would result in `messages` array `['a', 'b', 'c']`).
+
+The `bindings` array represents each child logger (if any), and the relevant bindings. 
+For instance given `logger.child({a: 1}).child({b: 2}).info({c: 3})`, the bindings array 
+would hold `[{a: 1}, {b: 2}]` and the `messages` array would be `[{c: 3}]`. The `bindings`
+are ordered according to their position in the child logger heirarchy, with the lowest index
+being the top of the heirarchy.
+
+By default serializers are not applied to log output in the browser, but they will *always* be
+applied to `messages` and `bindings` in the `logEvent` object. This allows us to ensure a consistent 
+format for all values between server and client.
+
+The `level` holds the label (for instance `info`), and the corresponding numerical value 
+(for instance `30`). This could be important in cases where client side level values and 
+labels differ from server side.
+
+The point of the `send` function is to remotely record log messages: 
+
+```js
+var pino = require('pino')({
+  browser: {
+    transmit: {
+      level: 'warn',
+      send: function (level, logEvent) {
+        if (level === 'warn') {
+          // maybe send the logEvent to a separate endpoint
+          // or maybe analyse the messages further before sending
+        }
+        // we could also use the `logEvent.level.value` property to determine
+        // numerical value
+        if (logEvent.level.value >= 50) { // covers error and fatal
+
+          // send the logEvent somewhere 
+        }
+      }
+    }
+  }
+})
+```
+
+<a name="caveats"></a>
+## Caveats
+
+There's some fine points to be aware of, which are a result of worthwhile trade-offs:
+
+### 11 Arguments
+
+The logger functions (e.g. `pino.info`) can take a maximum of 11 arguments.
+
+If you need more than that to write a log entry, you're probably doing it wrong.
+
+### Duplicate Keys
+
+It's possible for naming conflicts to arise between child loggers and
+children of child loggers.
+
+This isn't as bad as it sounds, even if you do use the same keys between
+parent and child loggers Pino resolves the conflict in the sanest way.
+
+For example, consider the following:
+
+```js
+var pino = require('pino')
+var fs = require('fs')
+pino(fs.createWriteStream('./my-log'))
+  .child({a: 'property'})
+  .child({a: 'prop'})
+  .info('howdy')
+```
+
+```sh
+$ cat my-log
+{"pid":95469,"hostname":"MacBook-Pro-3.home","level":30,"msg":"howdy","time":1459534114473,"a":"property","a":"prop","v":1}
+```
+
+Notice how there's two key's named `a` in the JSON output. The sub-childs properties
+appear after the parent child properties. This means if we run our logs through `pino -t` (or convert them to objects in any other way) we'll end up with one `a` property whose value corresponds to the lowest child in the hierarchy:
+
+```sh
+$ cat my-log | pino -t
+{"pid":95469,"hostname":"MacBook-Pro-3.home","level":30,"msg":"howdy","time":"2016-04-01T18:08:34.473Z","a":"prop","v":1}
+```
+
+This equates to the same log output that Bunyan supplies.
+
+One of Pino's performance tricks is to avoid building objects and stringifying
+them, so we're building strings instead. This is why duplicate keys between
+parents and children will end up in log output.
+
+<a name="team"></a>
+## The Team
+
+### Matteo Collina
+
+<https://github.com/pinojs>
+
+<https://www.npmjs.com/~matteo.collina>
+
+<https://twitter.com/matteocollina>
+
+### David Mark Clements
+
+<https://github.com/davidmarkclements>
+
+<https://www.npmjs.com/~davidmarkclements>
+
+<https://twitter.com/davidmarkclem>
+
+### James Sumners
+
+<https://github.com/jsumners>
+
+<https://www.npmjs.com/~jsumners>
+
+<https://twitter.com/jsumners79>
+
+### Thomas Watson Steen
+
+<https://github.com/watson>
+
+<https://www.npmjs.com/~watson>
+
+<https://twitter.com/wa7son>
+
+### Chat on Gitter
+
+<https://gitter.im/pinojs/pino>
+
+### Chat on IRC
+
+You'll find an active group of Pino users in the #pinojs channel on Freenode, including some of the contributors to this project.
+
+## Contributing
+
+Pino is an **OPEN Open Source Project**. This means that:
+
+> Individuals making significant and valuable contributions are given commit-access to the project to contribute as they see fit. This project is more like an open wiki than a standard guarded open source project.
+
+See the [CONTRIBUTING.md](https://github.com/pinojs/pino/blob/master/CONTRIBUTING.md) file for more details.
+
+<a name="acknowledgements"></a>
+## Acknowledgements
+
+This project was kindly sponsored by [nearForm](http://nearform.com).
+
+Logo and identity designed by Cosmic Fox Design: https://www.behance.net/cosmicfox.
+
+## License
+
+Licensed under [MIT](./LICENSE).
+
+[elasticsearch]: https://www.elastic.co/products/elasticsearch
+[kibana]: https://www.elastic.co/products/kibana

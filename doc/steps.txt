@@ -1,0 +1,56 @@
+Steps taken:
+1. Run script/tag_recommender/retrieve_list_of_repos_with_topics.py
+	- At the end of this step, information on 1000 repositories are downloaded
+2. Run script/tag_recommender/extract_and_load_repos_with_topics_from_json_to_db.py
+3. Run script/tag_recommender/retrieve_readme_file.py
+	- Need to run in 2 halves due to need to update code to handle KeyError
+	- At the end of this step, 873 README files are downloaded
+4. Create ZIP archive of README files
+5. Delete files smaller than 2KB (2048 B). After this step, 839 README files remain
+6. Remove files that are not in English:
+	answer-huang.dSYMTools.md
+	Bigkoo.Android-PickerView.md
+	bingoogolapple.BGAQRCode-Android.md
+	CarGuo.GSYVideoPlayer.md
+	chinese-poetry.chinese-poetry.md
+	chyingp.nodejs-learning-guide.md
+	crazycodeboy.TakePhoto.md
+	Curzibn.Luban.md
+	daniulive.SmarterStreaming.md
+	darknessomi.musicbox.md
+	DeathKing.Learning-SICP.md
+	Freelander.Android_Data.md
+	GcsSloop.AndroidNote.md
+	geeeeeeeeek.WeChatLuckyMoney.md
+	hankcs.HanLP.md
+	jeasonlzy.okhttp-OkGo.md
+	JeffLi1993.springboot-learning-example.md
+	judasn.Linux-Tutorial.md
+	justjavac.awesome-wechat-weapp.md
+	justjavac.free-programming-books-zh_CN.md
+	lionsoul2014.ip2region.md
+	littlecodersh.ItChat.md
+	liuruoze.EasyPR.md
+	Medicean.VulApps.md
+	nonstriater.Learn-Algorithms.md
+	opsnull.follow-me-install-kubernetes-cluster.md
+	QMUI.QMUI_Android.md
+	rootsongjc.kubernetes-handbook.md
+	scwang90.SmartRefreshLayout.md
+	sentsin.layui.md
+	shuzheng.zheng.md
+	skywind3000.awesome-cheatsheets.md
+	skywind3000.kcp.md
+	Tencent.xLua.md
+	Unknwon.the-way-to-go_ZH_CN.md
+	vnpy.vnpy.md
+	vondear.RxTool.md
+	waditu.tushare.md
+	wangshub.wechat_jump_game.md
+	X140Yu.Developing_iOS_8_Apps_With_Swift.md
+	yeasy.docker_practice.md
+	youth5201314.banner.md
+
+	740 items remain
+	
+	

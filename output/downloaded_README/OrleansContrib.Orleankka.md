@@ -1,0 +1,84 @@
+![Orleankka Logo](Logo.Wide.jpg)
+
+Orleankka is a functional extension for Microsoft Orleans framework. It provides a message-based API similar to Akka/ProtoActor, carefully layered on top of the Orleans (that's what in a name). Orleankka is an excellent choice for use-cases which can benefit from composable, uniform communication interface, such as CQRS, event-sourcing, FSM, etc.
+
+> References: [intro](https://www.youtube.com/watch?v=07Up88bpl20), [features](https://www.youtube.com/watch?v=FKL-PS8Q9ac), [slides](https://docs.google.com/presentation/d/1brM4SS-uJBRMZs-CdOZoJ0KUgrnPXXwrOXnYgfLL4Nk/edit#slide=id.p4) and [discussion](https://github.com/dotnet/orleans/issues/42).
+
+### Features
+
++ Message-based API with zero performance overhead
++ Custom F# DSL and bindings (DU, Pattern Matching, Tasks)
++ Switchable actor behaviors with built-in hierarchical FSM (behaviors)
++ Poweful actor/proxy middlewares (interceptors)
++ Convenient unit testing kit (stubs, mocks, expectations)
+
+### How to install
+
+To install client Orleankka library via NuGet, run this command in NuGet package manager console:
+
+	PM> Install-Package Orleankka
+
+For server-side library:
+
+	PM> Install-Package Orleankka.Runtime
+
+Check out "Getting started" guide: [C#](https://github.com/OrleansContrib/Orleankka/wiki/Getting-Started-CSharp)
+, [F#](https://github.com/OrleansContrib/Orleankka/wiki/Getting-Started-FSharp).
+
+### Build sources
+
+Clone repository and run the following in CLI from solution's root folder:
+
+	PM> Nake.bat
+
+This will restore dependencies and build everything in `debug` mode. Run `Nake.bat` with `-T` switch to see available commands.
+
+
+### Packages
+
+|  |[inside]
+| ------- |---------- |
+| [Orleankka](https://www.nuget.org/packages/Orleankka) | Core and client lib
+| [Orleankka.Runtime](https://www.nuget.org/packages/Orleankka.Runtime/) | Server-side runtime lib
+| [Orleankka.TestKit](https://www.nuget.org/packages/Orleankka.TestKit/) | Unit testing kit
+| [Orleankka.FSharp](https://www.nuget.org/packages/Orleankka.FSharp/) | F# core and client lib
+| [Orleankka.FSharp.Runtime](https://www.nuget.org/packages/Orleankka.FSharp.Runtime/) | F# server-side runtime lib
+
+### Examples
+
+##### C&#35;
+
++ Hello, world! [[demo]](Samples/CSharp/HelloWorld)
++ "WebScan" [[demo]](Samples/CSharp/Demo/Demo.App)
++ TestKit [[demo]](Source/CSharp/Demo/Demo.App.Tests)
++ Event Sourcing 
+	+ Idiomatic (CQRS) [[see]](Samples/CSharp/EventSourcing/Idiomatic)
+	+ Persistence: GetEventStore [[see]](Samples/CSharp/EventSourcing/Persistence/GES)
+	+ Persistence: Streamstone [[see]](Samples/CSharp/EventSourcing/Persistence/Streamstone)
++ Serialization
+	+ ProtoBuf [[see]](Samples/CSharp/Serialization/ProtoBuf)
+	+ Hyperion [[see]](Samples/CSharp/Serialization/Hyperion)
++ Reentrant messages [[rw-x]](Samples/CSharp/Reentrant)
++ Client-side observers [[chat]](Samples/CSharp/Observers)
++ Streams [[chat]](Samples/CSharp/Streams)
++ FSM [[simple]](Samples/CSharp/FSM/Lightbulb)
+
+##### F&#35;
+
++ Hello, world! [[demo]](Samples/FSharp/HelloWorld) 
++ eCommerce [[demo]](Samples/FSharp/Shop)
++ Reentrant messages [[demo]](Samples/FSharp/Reentrant)
++ Streams [[demo]](Samples/FSharp/Streams)
+
+### Documentation
+
+Documentation can be found [here](http://orleanscontrib.github.io/Orleankka/).
+
+## Community
+
++ Join [Gitter](https://gitter.im/OrleansContrib/Orleankka) chat
++ Follow the [@Orleankka](https://twitter.com/Orleankka) Twitter account for announcements
+
+## License
+
+Apache 2 License

@@ -1,0 +1,609 @@
+# [DEPRECATED] Algolia Search API Client for Laravel
+
+[Algolia Search](https://www.algolia.com) is a hosted full-text, numerical, and faceted search engine capable of delivering realtime results from the first keystroke.
+
+---
+
+**This package is deprecated, we recommend you to use [Laravel Scout](https://laravel.com/docs/5.4/scout)**. If you want to extend Scout capabilities, please refer to [our dedicated documentation](https://www.algolia.com/doc/api-client/laravel/algolia-and-scout/)
+
+---
+
+[![Build Status](https://img.shields.io/travis/algolia/algoliasearch-laravel/master.svg?style=flat)](https://travis-ci.org/algolia/algoliasearch-laravel)
+[![Latest Version](https://img.shields.io/github/release/algolia/algoliasearch-laravel.svg?style=flat)](https://github.com/algolia/algoliasearch-laravel/releases)
+[![License](https://img.shields.io/packagist/l/algolia/algoliasearch-laravel.svg?style=flat)](https://packagist.org/packages/algolia/algoliasearch-laravel)
+
+
+This PHP package integrates the Algolia Search API into the Laravel Eloquent ORM. It's based on the [algoliasearch-client-php](https://github.com/algolia/algoliasearch-client-php) package.
+
+**Note:** If you're using Laravel 4, checkout the [algoliasearch-laravel-4](https://github.com/algolia/algoliasearch-laravel-4) repository.
+
+
+
+
+## API Documentation
+
+You can find the full reference on [Algolia's website](https://www.algolia.com/doc/api-client/laravel/).
+
+
+## Table of Contents
+
+
+1. **[Install](#install)**
+
+    * [Install via composer](#install-via-composer)
+    * [Service provider](#service-provider)
+    * [Publish vendor](#publish-vendor)
+
+1. **[Quick Start](#quick-start)**
+
+    * [Quick Start](#quick-start)
+    * [Ranking &amp; Relevance](#ranking--relevance)
+    * [Frontend Search (realtime experience)](#frontend-search-realtime-experience)
+    * [Backend Search](#backend-search)
+
+1. **[Options](#options)**
+
+    * [Auto-indexing &amp; Asynchronism](#auto-indexing--asynchronism)
+    * [Custom Index Name](#custom-index-name)
+    * [Per-environment Indexes](#per-environment-indexes)
+    * [Custom `objectID`](#custom-objectid)
+    * [Restrict Indexing to a Subset of Your Data](#restrict-indexing-to-a-subset-of-your-data)
+
+1. **[Relationships](#relationships)**
+
+    * [Relationships](#relationships)
+
+1. **[Indexing](#indexing)**
+
+    * [Manual Indexing](#manual-indexing)
+    * [Manual Removal](#manual-removal)
+    * [Reindexing](#reindexing)
+    * [Clearing an Index](#clearing-an-index)
+
+1. **[Manage indices](#manage-indices)**
+
+    * [Primary/Replica](#primaryreplica)
+    * [Target Multiple Indexes](#target-multiple-indexes)
+
+1. **[Eloquent compatibility](#eloquent-compatibility)**
+
+    * [Eloquent compatibility](#eloquent-compatibility)
+    * [Compatibility](#compatibility)
+
+
+
+
+# Install
+
+
+
+## Install via composer
+Add `algolia/algoliasearch-laravel` to your `composer.json` file:
+
+```bash
+composer require algolia/algoliasearch-laravel
+```
+
+## Service provider
+Add the service provider to `config/app.php` in the `providers` array.
+
+```php
+AlgoliaSearch\Laravel\AlgoliaServiceProvider::class
+```
+
+## Publish vendor
+
+Laravel Algolia requires a connection configuration. To get started, you'll need to publish all vendor assets:
+
+```bash
+php artisan vendor:publish
+```
+
+You can add the ```--provider="Vinkla\Algolia\AlgoliaServiceProvider"``` option to only publish assets of the Algolia package.
+
+This will create a `config/algolia.php` file in your app that you can modify to set your configuration. Also, make sure you check for changes compared to the original config file after an upgrade.
+
+
+# Quick Start
+
+
+
+## Quick Start
+
+The following code adds search capabilities to your `Contact` model creating a `Contact` index:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use AlgoliaSearch\Laravel\AlgoliaEloquentTrait;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+}
+```
+
+By default all visible attributes are sent. If you want to send specific attributes you can do something like:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public function getAlgoliaRecord()
+    {
+        return array_merge($this->toArray(), [
+            'custom_name' => 'Custom Name'
+        ]);
+    }
+}
+```
+
+After setting up your model, you need to manually do an initial import of your data. You can do this by calling `reindex` on your model class. Using our previous example, this would be:
+
+```php
+Contact::reindex();
+```
+
+## Ranking & Relevance
+
+We provide many ways to configure your index settings to tune the overall relevancy, but the most important ones are the **searchable attributes** and the attributes reflecting the **record popularity**. You can configure them with the following code:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public $algoliaSettings = [
+        'searchableAttributes' => [
+            'id',
+            'name',
+        ],
+        'customRanking' => [
+            'desc(popularity)',
+            'asc(name)',
+        ],
+    ];
+}
+```
+
+You can propagate (save) the settings to algolia by using the `setSetting` method:
+
+```php
+Contact::setSettings();
+```
+
+#### Synonyms
+
+Synonyms are used to tell the engine about words or expressions that should be considered equal in regard to the textual relevance.
+
+Our [synonyms API](https://www.algolia.com/doc/relevance/synonyms) has been designed to manage as easily as possible a large set of synonyms for an index and its replicas.
+
+You can use the synonyms API by adding a `synonyms` in `$algoliaSettings` class property like this:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public $algoliaSettings = [
+        'synonyms' => [
+            [
+                'objectID' => 'red-color',
+                'type'     => 'synonym',
+                'synonyms' => ['red', 'another red', 'yet another red']
+            ]
+        ]
+    ];
+}
+```
+
+You can propagate (save) the settings to algolia using the `setSetting` method:
+
+```php
+Contact::setSettings();
+```
+
+## Frontend Search (realtime experience)
+
+Traditional search implementations tend to have search logic and functionality on the backend. This made sense when the search experience consisted of a user entering a search query, executing that search, and then being redirected to a search result page.
+
+Implementing search on the backend is no longer necessary. In fact, in most cases it is harmful to performance because of the extra network and processing latency. We highly recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-javascript) issuing all search requests directly from the end user's browser, mobile device, or client. It will reduce the overall search latency while offloading your servers at the same time.
+
+In your JavaScript code you can do:
+
+```js
+var client = algoliasearch('ApplicationID', 'Search-Only-API-Key');
+var index = client.initIndex('YourIndexName');
+index.search('something', function(success, hits) {
+  console.log(success, hits)
+}, { hitsPerPage: 10, page: 0 });
+```
+
+## Backend Search
+
+You could also use the `search` method, but it's not recommended to implement an instant/realtime search experience from the backend (having a frontend search gives a better user experience):
+
+```php
+Contact::search('jon doe');
+```
+
+
+# Options
+
+
+
+## Auto-indexing & Asynchronism
+
+Each time a record is saved; it will be - asynchronously - indexed. On the other hand, each time a record is destroyed, it will be - asynchronously - removed from the index.
+
+You can disable the auto-indexing and auto-removing by setting the following options:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public static $autoIndex = false;
+    public static $autoDelete = false;
+}
+```
+
+You can temporarily disable auto-indexing. This is often done for performance reasons.
+
+```php
+Contact::$autoIndex = false;
+Contact::clearIndices();
+
+for ($i = 0; $i < 10000; $i++) {
+    $contact = Contact::firstOrCreate(['name' => 'Jean']);
+}
+
+Contact::reindex(); // Will use batch operations.
+Contact::$autoIndex = true;
+```
+
+You can also make a dynamic condition for those two parameters by creating an `autoIndex` and/or `autoDelete method`
+on your model
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public function autoIndex()
+    {
+        if (\App::environment() === 'test') {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static autoDelete()
+    {
+        if (\App::environment() === 'test') {
+            return false;
+        }
+
+        return true;
+    }
+}
+```
+
+Be careful to define those two methods in AlgoliaEloquentTrait.
+When putting those methods in a parent class they will be "erased" by AlgoliaEloquentTrait if used in a child class
+(because of php inheritance).
+
+## Custom Index Name
+
+By default, the index name will be the pluralized class name, e.g. "Contacts". You can customize the index name by using the `$indices` option:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public $indices = ['contact_all'];
+}
+```
+
+## Per-environment Indexes
+
+You can suffix the index name with the current App environment using the following option:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public static $perEnvironment = true; // Index name will be 'Contacts_{\App::environnement()}';
+}
+```
+
+## Custom `objectID`
+
+By default, the `objectID` is based on your record's `keyName` (`id` by default). You can change this behavior specifying the `objectIdKey` option (be sure to use a uniq field).
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public static $objectIdKey = 'new_key';
+}
+```
+
+## Restrict Indexing to a Subset of Your Data
+
+You can add constraints controlling if a record must be indexed by defining the `indexOnly()` method.
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public function indexOnly($index_name)
+    {
+        return (bool) $condition;
+    }
+}
+```
+
+
+# Relationships
+
+
+
+## Relationships
+
+By default the Algolia package will fetch the **loaded** relationships.
+
+If you want to index records that haven't yet loaded any relations, you can do it by loading them in the ```getAlgoliaRecord``` that you can create in your model.
+
+It will look like:
+
+```php
+public function getAlgoliaRecord()
+{
+    /**
+     * Load the categories relation so that it's available
+     *  in the laravel toArray method
+     */
+    $this->categories;
+
+   return $this->toArray();
+}
+```
+
+In the resulted object, you will have categories converted to array by Laravel. If you want a custom relation structure you will instead do something like:
+
+```php
+public function getAlgoliaRecord()
+{
+    /**
+     * Load the categories relation so that it's available
+     *  in the laravel toArray method
+     */
+    $extra_data = [];
+    $extra_data['categories'] = array_map(function ($data) {
+                                        return $data['name'];
+                                }, $this->categories->toArray());
+
+   return array_merge($this->toArray(), $extra_data);
+}
+```
+
+
+# Indexing
+
+## Visibility
+
+By default, Algolia will only be able to access **visible** attributes of your model. So, for example, you will receive a `No content in PUT request` exception when using this example code, because `invisible_attribute` key returns an empty/null variable.
+
+```php
+protected $visible = ['visible_attribute', 'other_visible_attribute'];
+
+public function getAlgoliaRecord()
+{
+    return [
+        'invisible_attribute' => $this->invisible_attribute
+    ];
+}
+```
+
+Before Indexing, be sure to have correctly listed your visible attributes. To bypass this safety mask imposed by Laravel, you may use `$this->attributes['invisible_attribute']` to access directly to the attribute even if is not visible, but the recommendation is to avoid this type of access to attributes in your Model.
+
+## Manual Indexing
+
+You can trigger indexing using the `pushToIndex` instance method.
+
+```php
+$contact = Contact::firstOrCreate(['name' => 'Jean']);
+$contact->pushToIndex();
+```
+
+## Manual Removal
+
+And trigger the removal using the `removeFromIndex` instance method.
+
+```php
+$contact = Contact::firstOrCreate(['name' => 'Jean']);
+$contact->removeFromIndex();
+```
+
+## Reindexing
+
+To *safely* reindex all your records (index to a temporary index + move the temporary index to the current one atomically), use the `reindex` class method:
+
+```php
+Contact::reindex();
+```
+
+To reindex all your records (in place, without deleting outdated records):
+
+```php
+Contact::reindex(false);
+```
+
+To set settings during the reindexing process:
+
+```php
+Contact::reindex(true, true);
+```
+
+To keep settings that you set on the Algolia dashboard when reindexing and changing settings:
+
+```php
+Contact::reindex(true, true, true);
+```
+
+To implement a callback that gets called everytime a batch of entities is indexed:
+
+```php
+Contact::reindex(true, true, false, function ($entities)
+{
+    foreach ($entities as $entity)
+    {
+        var_dump($entity->id); // Contact::$id
+    }
+});
+```
+
+## Clearing an Index
+
+To clear an index, use the `clearIndices` class method:
+
+```ruby
+Contact::clearIndices();
+```
+
+# Manage indices
+
+
+
+## Primary/Replica
+
+You can define replica indexes using the `$algolia_settings` variable:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+     use AlgoliaEloquentTrait;
+
+     public $algoliaSettings = [
+        'searchableAttributes' => [
+            'id',
+            'name',
+        ],
+        'customRanking' => [
+            'desc(popularity)',
+            'asc(name)',
+        ],
+        'replicas' => [
+            'contacts_desc',
+        ],
+    ];
+
+    public $replicasSettings = [
+        'contacts_desc' => [
+            'ranking' => [
+                'desc(name)',
+                'typo',
+                'geo',
+                'words',
+                'proximity',
+                'attribute',
+                'exact',
+                'custom'
+            ]
+        ]
+    ];
+}
+```
+
+To search using a replica, use the following code:
+
+```php
+Book::search('foo bar', ['index' => 'contacts_desc']);
+```
+
+## Target Multiple Indexes
+
+You can index a record in several indexes using the <code>$indices</code> property:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+
+class Contact extends Model
+{
+    use AlgoliaEloquentTrait;
+
+    public $indices = [
+        'contact_public',
+        'contact_private',
+    ];
+
+    public function indexOnly($indexName)
+    {
+        if ($indexName == 'contact_public')
+            return true;
+
+        return $this->private;
+    }
+
+}
+```
+
+To search using an extra index, use the following code:
+
+```php
+Book::search('foo bar', ['index' => 'contacts_private']);
+```
+
+
+# Eloquent compatibility
+
+
+
+## Eloquent compatibility
+
+Doing:
+
+```php
+Ad::where('id', $id)->update($attributes);
+```
+
+will not trigger anything in the model (so no update will happen in Algolia). This is because it is not an Eloquent call. It is just a convenient way to generate the query hidden behind the model.
+
+To make this query work with Algolia you need to do it like this:
+
+```php
+Ad::find($id)->update($attributes);
+```
+
+## Compatibility
+
+Compatible with 5.x applications
+
+
+

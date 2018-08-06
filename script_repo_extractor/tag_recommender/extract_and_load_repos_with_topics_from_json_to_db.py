@@ -12,6 +12,7 @@ if __name__ == '__main__':
 
     json_dir = '../../output/repos_with_topics/'
     languages = ['c', 'c++', 'c#', 'go', 'java', 'javascript', 'python', 'php', 'ruby', 'shell']
+    languages = ['java']
 
     log_filename = '../../log/extract_and_load_repos_with_topics_from_json_to_db.log'
     logging.basicConfig(handlers=[logging.FileHandler(log_filename, 'w+', 'utf-8')], level=20)
@@ -29,7 +30,7 @@ if __name__ == '__main__':
                     repo_full_name = j_obj['full_name']
                     topics = ','.join(j_obj['topics'])
                     df = df.append({'repo_full_name': repo_full_name, 'topics': topics}, ignore_index=True)
-
+    exit()
     conn = sqlite3.connect(db_filename)
     try:
         # drop duplicates (possible if position of one repository shift to next page between queries

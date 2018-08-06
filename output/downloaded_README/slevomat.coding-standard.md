@@ -1,0 +1,671 @@
+# Slevomat Coding Standard
+
+[![Latest version](https://img.shields.io/packagist/v/slevomat/coding-standard.svg?style=flat-square&colorB=007EC6)](https://packagist.org/packages/slevomat/coding-standard)
+[![Downloads](https://img.shields.io/packagist/dt/slevomat/coding-standard.svg?style=flat-square&colorB=007EC6)](https://packagist.org/packages/slevomat/coding-standard)
+[![Travis build status](https://img.shields.io/travis/slevomat/coding-standard/master.svg?label=travis&style=flat-square)](https://travis-ci.org/slevomat/coding-standard)
+[![AppVeyor build status](https://img.shields.io/appveyor/ci/slevomat/coding-standard/master.svg?label=appveyor&style=flat-square)](https://ci.appveyor.com/project/slevomat/coding-standard)
+[![Code coverage](https://img.shields.io/coveralls/slevomat/coding-standard/master.svg?style=flat-square)](https://coveralls.io/github/slevomat/coding-standard?branch=master)
+![PHPStan](https://img.shields.io/badge/style-level%207-brightgreen.svg?style=flat-square&label=phpstan)
+
+Slevomat Coding Standard for [PHP_CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) provides sniffs that fall into three categories:
+
+* Functional - improving the safety and behaviour of code
+* Cleaning - detecting dead code
+* Formatting - rules for consistent code looks
+
+## Table of contents
+
+1. [Sniffs included in this standard](#sniffs-included-in-this-standard)
+  - [Functional - improving the safety and behaviour of code](#functional---improving-the-safety-and-behaviour-of-code)
+  - [Cleaning - detecting dead code](#cleaning---detecting-dead-code)
+  - [Formatting - rules for consistent code looks](#formatting---rules-for-consistent-code-looks)
+2. [Installation](#installation)
+3. [How to run the sniffs](#how-to-run-the-sniffs)
+  - [Choose which sniffs to run](#choose-which-sniffs-to-run)
+  - [Using all sniffs from the standard](#using-all-sniffs-from-the-standard)
+4. [Fixing errors automatically](#fixing-errors-automatically)
+5. [Suppressing sniffs locally](#suppressing-sniffs-locally)
+6. [Contributing](#contributing)
+
+## Sniffs included in this standard
+
+🔧 = [Automatic errors fixing](#fixing-errors-automatically)
+
+🚧 = [Sniff check can be suppressed locally](#suppressing-sniffs-locally)
+
+### Functional - improving the safety and behaviour of code
+
+#### SlevomatCodingStandard.TypeHints.TypeHintDeclaration 🔧🚧
+
+* Checks for missing property types in phpDoc `@var`.
+* Checks for missing typehints in case they can be declared natively. If the phpDoc contains something that can be written as a native PHP 7.0, 7.1 or 7.2 typehint, this sniff reports that.
+* Checks for missing `@return` and/or native return typehint in case the method body contains `return` with a value.
+* Checks for useless doc comments. If the native method declaration contains everything and the phpDoc does not add anything useful, it's reported as useless and can optionally be automatically removed with `phpcbf`.
+* Some phpDocs might still be useful even if they do not add any typehint information. They can contain textual descriptions of code elements and also some meaningful annotations like `@expectException` or `@dataProvider`.
+* Forces to specify what's in traversable types like `array`, `iterable` and `\Traversable`.
+
+Sniff provides the following settings:
+
+* **DEPRECATED** `enableNullableTypeHints`: enforces to transform `Foo|null` in phpDoc into `?Foo` in native typehint.
+* **DEPRECATED** `enableVoidTypeHint`: enforces to transform `@return void` into native `void` return typehint.
+* `enableObjectTypeHint`: enforces to transform `@param object` or `@return object` into native `object` typehint. It's on by default if you're on PHP 7.2+
+* `traversableTypeHints`: enforces which typehints must have specified contained type. E. g. if you set this to `\Doctrine\Common\Collections\Collection`, then `\Doctrine\Common\Collections\Collection` must always be supplied with the contained type: `\Doctrine\Common\Collections\Collection|Foo[]`.
+* **DEPRECATED** `usefulAnnotations`: prevents reporting and removing useless phpDocs if they contain an additional configured annotation like `@dataProvider`.
+* `allAnnotationsAreUseful`: phpDoc is useful if it contain any annotation.
+* `enableEachParameterAndReturnInspection`: enables inspection and fixing of `@param` and `@return` annotations separately. Useful when you only want to document parameters or return values that could not be expressed natively (i.e. member types of `array` or `Traversable`).
+
+This sniff can cause an error if you're overriding or implementing a parent method which does not have typehints. In such cases add `@phpcsSuppress SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint` annotation to the method to have this sniff skip it.
+
+#### SlevomatCodingStandard.Exceptions.ReferenceThrowableOnly 🔧
+
+In PHP 7.0, a [`Throwable` interface was added](https://wiki.php.net/rfc/throwable-interface) that allows catching and handling errors in more cases than `Exception` previously allowed. So, if the catch statement contained `Exception` on PHP 5.x, it means it should probably be rewritten to reference `Throwable` on PHP 7.x. This sniff enforces that.
+
+#### SlevomatCodingStandard.TypeHints.DeclareStrictTypes 🔧
+
+Enforces having `declare(strict_types = 1)` at the top of each PHP file. Allows configuring how many newlines should be between the `<?php` opening tag and the `declare` statement.
+
+Sniff provides the following settings:
+
+* `newlinesCountBetweenOpenTagAndDeclare`: allows to set 0 to N newlines to be between `<?php` and `declare`
+* `newlinesCountAfterDeclare`: allows to set 0 to N newlines to be between `declare` and next statement
+* `spacesCountAroundEqualsSign`: allows to set number of required spaces around the `=` operator
+
+#### SlevomatCodingStandard.ControlStructures.AssignmentInCondition
+
+Disallows assignments in `if`, `elseif` and `do-while` loop conditions:
+
+```php
+if ($file = findFile($path)) {
+
+}
+```
+
+Assignment in `while` loop condition is specifically allowed because it's commonly used.
+
+This is a great addition to already existing `SlevomatCodingStandard.ControlStructures.DisallowYodaComparison` because it prevents the danger of assigning something by mistake instead of using comparison operator like `===`.
+
+#### SlevomatCodingStandard.ControlStructures.DisallowEmpty
+
+Disallows use of `empty()`.
+
+#### SlevomatCodingStandard.ControlStructures.DisallowEqualOperators 🔧
+
+Disallows using loose `==` and `!=` comparison operators. Use `===` and `!==` instead, they are much more secure and predictable.
+
+#### SlevomatCodingStandard.ControlStructures.RequireNullCoalesceOperator 🔧
+
+Requires use of null coalesce operator when possible.
+
+#### SlevomatCodingStandard.ControlStructures.EarlyExit 🔧
+
+Requires use of early exit.
+
+#### SlevomatCodingStandard.Operators.DisallowIncrementAndDecrementOperators
+
+Disallows using `++` and `--` operators.
+
+### Cleaning - detecting dead code
+
+#### SlevomatCodingStandard.Classes.UnusedPrivateElements 🚧
+
+Although PHP_CodeSniffer is not suitable for static analysis because it is limited to analysing one file at a time, it is possible to use it to perform certain checks. `UnusedPrivateElementsSniff` checks for unused methods, unused or write-only properties in a class and unused private constants. Reported unused elements are safe to remove.
+
+This is very useful during refactoring to clean up dead code and injected dependencies.
+
+Sniff provides the following settings:
+
+* `alwaysUsedPropertiesAnnotations`: mark certain properties as always used, for example the ones with `@ORM\Column`
+* `alwaysUsedPropertiesSuffixes`: mark properties with name ending with a certain string to be always marked as used
+
+#### SlevomatCodingStandard.Namespaces.UnusedUses 🔧
+
+Looks for unused imports from other namespaces.
+
+Sniff provides the following settings:
+
+* `searchAnnotations` (defaults to `false`): enables searching for mentions in annotations, which is especially useful for projects using [Doctrine Annotations](https://github.com/doctrine/annotations)
+* `ignoredAnnotationNames`: case sensitive list of annotation names that the sniff should ignore (only the name is ignored, annotation content is still searched). Useful for name collisions like `@testCase` annotation and `TestCase` class.
+* `ignoredAnnotations`: case sensitive list of annotation names that the sniff ignore completely (both name and content are ignored). Useful for name collisions like `@group Cache` annotation and `Cache` class.
+
+#### SlevomatCodingStandard.Namespaces.UseFromSameNamespace 🔧
+
+Prohibits uses from the same namespace:
+
+```php
+namespace Foo;
+
+use Foo\Bar;
+```
+
+#### SlevomatCodingStandard.Exceptions.DeadCatch
+
+This sniff finds unreachable catch blocks:
+
+```php
+try {
+	doStuff();
+} catch (\Throwable $e) {
+	log($e);
+} catch (\InvalidArgumentException $e) {
+	// unreachable!
+}
+```
+
+### Formatting - rules for consistent code looks
+
+#### SlevomatCodingStandard.Arrays.TrailingArrayComma 🔧
+
+Commas after last element in an array make adding a new element easier and result in a cleaner versioning diff.
+
+This sniff enforces trailing commas in multi-line arrays and requires short array syntax `[]`.
+
+#### SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming
+
+Reports use of superfluous prefix or suffix "Abstract" for abstract classes.
+
+#### SlevomatCodingStandard.Classes.SuperfluousInterfaceNaming
+
+Reports use of superfluous prefix or suffix "Interface" for interfaces.
+
+#### SlevomatCodingStandard.Classes.SuperfluousExceptionNaming
+
+Reports use of superfluous suffix "Exception" for exceptions.
+
+#### SlevomatCodingStandard.ControlStructures.LanguageConstructWithParentheses 🔧
+
+`LanguageConstructWithParenthesesSniff` checks and fixes language construct used with parentheses.
+
+#### SlevomatCodingStandard.ControlStructures.NewWithParentheses 🔧
+
+Requires `new` with parentheses.
+
+#### SlevomatCodingStandard.ControlStructures.DisallowShortTernaryOperator 🔧
+
+Disallows short ternary operator `?:`.
+
+Sniff provides the following settings:
+
+* `fixable`: the sniff is fixable by default, however in strict code it makes sense to forbid this weakly typed form of ternary altogether, you can disable fixability with this option.
+
+#### SlevomatCodingStandard.ControlStructures.RequireShortTernaryOperator 🔧
+
+Requires short ternary operator `?:` when possible.
+
+#### SlevomatCodingStandard.ControlStructures.DisallowYodaComparison/RequireYodaComparison 🔧
+
+[Yoda conditions](https://en.wikipedia.org/wiki/Yoda_conditions) decrease code comprehensibility and readability by switching operands around comparison operators forcing the reader to read the code in an unnatural way.
+
+`DisallowYodaComparisonSniff` looks for and fixes such comparisons not only in `if` statements but in the whole code.
+
+However, if you prefer Yoda conditions, you can use `RequireYodaComparisonSniff`.
+
+#### SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses 🔧
+
+Checks whether uses at the top of a file are alphabetically sorted. Follows natural sorting and takes edge cases with special symbols into consideration. The following code snippet is an example of correctly sorted uses:
+
+```php
+use LogableTrait;
+use LogAware;
+use LogFactory;
+use LoggerInterface;
+use LogLevel;
+use LogStandard;
+```
+
+Sniff provides the following settings:
+
+
+* `psr12Compatible`: sets the required order to `classes`, `functions` and `constants`. Default is PHPStorm compatible: `classes`, `constants` and `functions`.
+* `caseSensitive`: compare namespaces case sensitively, which makes this order correct:
+
+```php
+use LogAware;
+use LogFactory;
+use LogLevel;
+use LogStandard;
+use LogableTrait;
+use LoggerInterface;
+```
+
+#### SlevomatCodingStandard.Namespaces.RequireOneNamespaceInFile
+
+Requires only one namespace in a file.
+
+#### SlevomatCodingStandard.Namespaces.NamespaceDeclaration 🔧
+
+Enforces one space after `namespace`, disallows content between namespace name and semicolon and disallows use of bracketed syntax.
+
+#### SlevomatCodingStandard.Namespaces.NamespaceSpacing 🔧
+
+Enforces configurable number of lines before and after `namespace`.
+
+Sniff provides the following settings:
+
+* `linesCountBeforeNamespace`: allows to configure the number of lines before `namespace`.
+* `linesCountAfterNamespace`: allows to configure the number of lines after `namespace`.
+
+#### SlevomatCodingStandard.Namespaces.UseSpacing 🔧
+
+Enforces configurable number of lines before first `use`, after last `use` and between two different types of `use` (eg. between `use function` and `use const`). Also enforces zero number of lines between same types of `use`.
+
+Sniff provides the following settings:
+
+* `linesCountBeforeFirstUse`: allows to configure the number of lines before first `use`.
+* `linesCountBetweenUseTypes`: allows to configure the number of lines between two different types of `use`.
+* `linesCountAfterLastUse`: allows to configure the number of lines after last `use`.
+
+
+#### SlevomatCodingStandard.TypeHints.LongTypeHints 🔧
+
+Enforces using shorthand scalar typehint variants in phpDocs: `int` instead of `integer` and `bool` instead of `boolean`. This is for consistency with native scalar typehints which also allow shorthand variants only.
+
+
+#### SlevomatCodingStandard.PHP.ShortList 🔧
+
+Enforces using short form of list syntax, `[...]` instead of `list(...)`.
+
+
+#### SlevomatCodingStandard.PHP.TypeCast 🔧
+
+Enforces using shorthand cast operators, forbids use of unset and binary cast operators: `(bool)` instead of `(boolean)`, `(int)` instead of `(integer)`, `(float)` instead of `(double)` or `(real)`. `(binary)` and `(unset)` are forbidden.
+
+
+#### SlevomatCodingStandard.Files.TypeNameMatchesFileName
+
+For projects not following the [PSR-0](http://www.php-fig.org/psr/psr-0/) or [PSR-4](http://www.php-fig.org/psr/psr-4/) autoloading standards, this sniff checks whether a namespace and a name of a class/interface/trait follows agreed-on way to organize code into directories and files.
+
+Other than enforcing that the type name must match the name of the file it's contained in, this sniff is very configurable. Consider the following sample configuration:
+
+```xml
+<rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
+	<properties>
+		<property name="rootNamespaces" type="array" value="app/ui=>Slevomat\UI,app=>Slevomat,build/SlevomatSniffs/Sniffs=>SlevomatSniffs\Sniffs,tests/ui=>Slevomat\UI,tests=>Slevomat"/>
+		<property name="skipDirs" type="array" value="components,forms,model,models,services,stubs,data,new"/>
+		<property name="ignoredNamespaces" type="array" value="Slevomat\Services"/>
+	</properties>
+</rule>
+```
+
+Sniff provides the following settings:
+
+* `rootNamespaces` property expects configuration similar to PSR-4 - project directories mapped to certain namespaces.
+* `skipDirs` are not taken into consideration when comparing a path to a namespace. For example, with the above settings, file at path `app/services/Product/Product.php` is expected to contain `Slevomat\Product\Product`, not `Slevomat\services\Product\Product`.
+* `extensions`: allow different file extensions. Default is `php`.
+* `ignoredNamespaces`: sniff is not performed on these namespaces.
+
+#### SlevomatCodingStandard.Classes.ClassConstantVisibility 🔧
+
+In PHP 7.1+ it's possible to declare [visibility of class constants](https://wiki.php.net/rfc/class_const_visibility). In a similar vein to optional declaration of visibility for properties and methods which is actually required in sane coding standards, this sniff also requires declaring visibility for all class constants.
+
+Sniff provides the following settings:
+
+* `fixable`: the sniff is not fixable by default because we think it's better to decide about each constant one by one however you can enable fixability with this option.
+
+```php
+const FOO = 1; // visibility missing!
+public const BAR = 2; // correct
+```
+
+#### SlevomatCodingStandard.TypeHints.ReturnTypeHintSpacing 🔧
+
+Enforces consistent formatting of return typehints, like this:
+
+```php
+function foo(): ?int
+```
+
+Sniff provides the following settings:
+
+* `spacesCountBeforeColon`: the number of spaces expected between closing brace and colon.
+
+#### SlevomatCodingStandard.TypeHints.NullableTypeForNullDefaultValue 🔧
+
+Checks whether the nullablity `?` symbol is present before each nullable and optional parameter (which are marked as `= null`):
+
+```php
+function foo(
+	int $foo = null, // ? missing
+	?int $bar = null // correct
+) {
+
+}
+```
+
+#### SlevomatCodingStandard.TypeHints.ParameterTypeHintSpacing 🔧
+
+* Checks that there's a single space between a typehint and a parameter name: `Foo $foo`
+* Checks that there's no whitespace between a nullability symbol and a typehint: `?Foo`
+
+#### SlevomatCodingStandard.Namespaces.DisallowGroupUse
+
+[Group use declarations](https://wiki.php.net/rfc/group_use_declarations) are ugly, make diffs ugly and this sniff prohibits them.
+
+#### SlevomatCodingStandard.Namespaces.FullyQualifiedClassNameAfterKeyword 🔧
+
+Enforces fully qualified type references after configurable set of language keywords.
+
+For example, with the following setting, extended or implemented type must always be referenced with a fully qualified name:
+
+```xml
+<rule ref="SlevomatCodingStandard.Namespaces.FullyQualifiedClassNameAfterKeyword">
+	<properties>
+		<property name="keywordsToCheck" type="array" value="T_EXTENDS,T_IMPLEMENTS"/>
+	</properties>
+</rule>
+```
+
+#### SlevomatCodingStandard.Namespaces.FullyQualifiedExceptions 🔧
+
+This sniff reduces confusion in the following code snippet:
+
+```php
+try {
+	$this->foo();
+} catch (Exception $e) {
+	// Is this the general exception all exceptions must extend from? Or Exception from the current namespace?
+}
+```
+
+All references to types named `Exception` or ending with `Exception` must be referenced via a fully qualified name:
+
+```php
+try {
+	$this->foo();
+} catch (\FooCurrentNamespace\Exception $e) {
+
+} catch (\Exception $e) {
+
+}
+```
+
+Sniff provides the following settings:
+
+* Exceptions with different names can be configured in `specialExceptionNames` property.
+* If your codebase uses classes that look like exceptions (because they have `Exception` or `Error` suffixes) but aren't, you can add them to `ignoredNames` property and the sniff won't enforce them to be fully qualified. Classes with `Error` suffix has to be added to ignored only if they are in the root namespace (like `LibXMLError`).
+
+#### SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalConstants 🔧
+
+All references to global constants must be referenced via a fully qualified name.
+
+Sniff provides the following settings:
+
+* `exclude`: list of global constants that are allowed not to be referenced via FQN.
+
+#### SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalFunctions 🔧
+
+All references to global functions must be referenced via a fully qualified name.
+
+Sniff provides the following settings:
+
+* `exclude`: list of global functions that are allowed not to be referenced via FQN.
+
+#### SlevomatCodingStandard.Namespaces.MultipleUsesPerLine
+
+Prohibits multiple uses separated by commas:
+
+```php
+use Foo, Bar;
+```
+
+#### SlevomatCodingStandard.Namespaces.ReferenceUsedNamesOnly 🔧
+
+Sniff provides the following settings:
+
+* `searchAnnotations` (defaults to `false`): enables searching for mentions in `@var`, `@param`, `@return` and `@throws` annotations.
+* `namespacesRequiredToUse`: if not set, all namespaces are required to be used. When set, only mentioned namespaces are required to be used. Useful in tandem with UseOnlyWhitelistedNamespaces sniff.
+* `fullyQualifiedKeywords`: allows fully qualified names after certain keywords. Useful in tandem with FullyQualifiedClassNameAfterKeyword sniff.
+* `allowFullyQualifiedExceptions`, `specialExceptionNames` & `ignoredNames`: allows fully qualified exceptions. Useful in tandem with FullyQualifiedExceptions sniff.
+* `allowFullyQualifiedNameForCollidingClasses`: allow fully qualified name for a class with a colliding use statement.
+* `allowFullyQualifiedNameForCollidingFunctions`: allow fully qualified name for a function with a colliding use statement.
+* `allowFullyQualifiedNameForCollidingConstants`: allow fully qualified name for a constant with a colliding use statement.
+* `allowFullyQualifiedGlobalClasses`: allows using fully qualified classes from global space (i.e. `\DateTimeImmutable`).
+* `allowFullyQualifiedGlobalFunctions`: allows using fully qualified functions from global space (i.e. `\phpversion()`).
+* `allowFullyQualifiedGlobalConstants`: allows using fully qualified constants from global space (i.e. `\PHP_VERSION`).
+* `allowFallbackGlobalFunctions`: allows using global functions via fallback name without `use` (i.e. `phpversion()`).
+* `allowFallbackGlobalConstants`: allows using global constants via fallback name without `use` (i.e. `PHP_VERSION`).
+* `allowPartialUses`: allows using and referencing whole namespaces:
+
+#### SlevomatCodingStandard.Namespaces.UseOnlyWhitelistedNamespaces
+
+Disallows uses of other than configured namespaces.
+
+Sniff provides the following settings:
+
+* `namespacesRequiredToUse`: namespaces in this array are the only ones allowed to be used. E. g. root project namespace.
+* `allowUseFromRootNamespace`: also allow using top-level namespace:
+
+```php
+use DateTimeImmutable;
+```
+
+#### SlevomatCodingStandard.Namespaces.UseDoesNotStartWithBackslash 🔧
+
+Disallows leading backslash in use statement:
+
+```php
+use \Foo\Bar;
+```
+
+#### SlevomatCodingStandard.Types.EmptyLinesAroundTypeBraces 🔧
+
+Enforces one configurable number of lines after opening class/interface/trait brace and one empty line before the closing brace.
+
+Sniff provides the following settings:
+
+* `linesCountAfterOpeningBrace`: allows to configure the number of lines after opening brace.
+* `linesCountBeforeClosingBrace`: allows to configure the number of lines before closing brace.
+
+#### SlevomatCodingStandard.Namespaces.FullyQualifiedClassNameInAnnotation 🔧
+
+Enforces fully qualified names of classes and interfaces in phpDocs - in `@var`, `@param`, `@return`, `@throws`. This results in unambiguous phpDocs.
+
+#### SlevomatCodingStandard.Commenting.ForbiddenAnnotations 🔧
+
+Reports forbidden annotations. No annotations are forbidden by default, the configuration is completely up to the user. It's recommended to forbid obsolete and inappropriate annotations like:
+
+* `@author`, `@created`, `@version`: we have version control systems.
+* `@package`: we have namespaces.
+* `@copyright`, `@license`: it's not necessary to repeat licensing information in each file.
+* `@throws`: it's not possible to enforce this annotation and the information can become outdated.
+
+Sniff provides the following settings:
+
+* `forbiddenAnnotations`: allows to configure which annotations are forbidden to be used.
+
+#### SlevomatCodingStandard.Commenting.ForbiddenComments 🔧
+
+Reports forbidden comments in descriptions. Nothing is forbidden by default, the configuration is completely up to the user. It's recommended to forbid generated or inappropriate messages like:
+
+* `Constructor.`
+* `Created by PhpStorm.`
+
+Sniff provides the following settings:
+
+* `forbiddenCommentPatterns`: allows to configure which comments are forbidden to be used. This is an array of regular expressions (PCRE) with delimiters.
+
+#### SlevomatCodingStandard.Commenting.DocCommentSpacing 🔧
+
+Enforces configurable number of lines before first content (description or annotation), after last content (description or annotation),
+between description and annotations, between two different annotations types (eg. between `@param` and `@return`).
+
+Sniff provides the following settings:
+
+* `linesCountBeforeFirstContent`: allows to configure the number of lines before first content (description or annotation).
+* `linesCountBetweenDescriptionAndAnnotations`: allows to configure the number of lines between description and annotations.
+* `linesCountBetweenDifferentAnnotationsTypes`: allows to configure the number of lines between two different annotations types.
+* `linesCountAfterLastContent`: allows to configure the number of lines after last content (description or annotation).
+
+#### SlevomatCodingStandard.Commenting.EmptyComment 🔧
+
+Reports empty comments.
+
+#### SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration 🔧
+
+Reports invalid format of inline phpDocs with `@var`.
+
+#### SlevomatCodingStandard.Commenting.RequireOneLinePropertyDocComment 🔧
+
+Requires comments with single-line content to be written as one-liners.
+
+#### SlevomatCodingStandard.Commenting.DisallowOneLinePropertyDocComment 🔧
+
+Requires comments with single-line content to be written as multi-liners.
+
+## Installation
+
+The recommended way to install Slevomat Coding Standard is [through Composer](http://getcomposer.org).
+
+```JSON
+{
+	"require-dev": {
+		"slevomat/coding-standard": "~4.0"
+	}
+}
+```
+
+It's also recommended to install [jakub-onderka/php-parallel-lint](https://github.com/JakubOnderka/PHP-Parallel-Lint) which checks source code for syntax errors. Sniffs count on the processed code to be syntactically valid (no parse errors), otherwise they can behave unexpectedly. It is advised to run `PHP-Parallel-Lint` in your build tool before running `PHP_CodeSniffer` and exiting the build process early if `PHP-Parallel-Lint` fails.
+
+## How to run the sniffs
+
+You can choose one of two ways to run only selected sniffs from the standard on your codebase:
+
+### Choose which sniffs to run
+
+Mention Slevomat Coding Standard in your project's `ruleset.xml`:
+
+```xml
+<?xml version="1.0"?>
+<ruleset name="AcmeProject">
+	<rule ref="vendor/slevomat/coding-standard/SlevomatCodingStandard/ruleset.xml"><!-- relative path to your ruleset.xml -->
+		<!-- sniffs to exclude -->
+	</rule>
+</ruleset>
+```
+
+When running `phpcs` [on the command line](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage), use the `--sniffs` option to list all the sniffs you want to use separated by a comma:
+
+```
+vendor/bin/phpcs --standard=ruleset.xml \
+--sniffs=SlevomatCodingStandard.ControlStructures.DisallowYodaComparison,SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses \
+--extensions=php --encoding=utf-8 --tab-width=4 -sp src tests
+```
+
+Or write your own ruleset.xml by referencing the selected sniffs. This is a sample ruleset.xml:
+
+```xml
+<?xml version="1.0"?>
+<ruleset name="AcmeProject">
+	<config name="installed_paths" value="../../slevomat/coding-standard"/><!-- relative path from PHPCS source location -->
+	<rule ref="SlevomatCodingStandard.Arrays.TrailingArrayComma"/>
+	<!-- other sniffs to include -->
+</ruleset>
+```
+
+Then run the `phpcs` executable the usual way:
+
+```
+vendor/bin/phpcs --standard=ruleset.xml --extensions=php --tab-width=4 -sp src tests
+```
+
+### Using all sniffs from the standard
+
+⚠️ This is no longer a recommended way to use Slevomat Coding Standard, because your build can break when moving between minor versions of the standard (which can happen if you use `^` or `~` version constraint in `composer.json`). We regularly add new sniffs even in minor versions meaning your code won't most likely comply with new minor versions of the package.
+
+If you want to use the whole coding standard, besides requiring `slevomat/coding-standard` in composer.json, require also Consistence Coding Standard:
+
+```JSON
+{
+	"require-dev": {
+		"consistence/coding-standard": "~2.0"
+	}
+}
+```
+
+Then mention both standards in `ruleset.xml`:
+
+```xml
+<?xml version="1.0"?>
+<ruleset name="AcmeProject">
+	<rule ref="vendor/consistence/coding-standard/Consistence/ruleset.xml" />
+	<rule ref="vendor/slevomat/coding-standard/SlevomatCodingStandard/ruleset.xml" />
+	<!-- additional settings -->
+</ruleset>
+```
+
+To check your code base for violations, run `PHP-Parallel-Lint` and `PHP_CodeSniffer` from the command line:
+
+```
+vendor/bin/parallel-lint src tests
+vendor/bin/phpcs --standard=ruleset.xml --extensions=php --tab-width=4 -sp src tests
+```
+
+## Fixing errors automatically
+
+Sniffs in this standard marked by the 🔧 symbol support [automatic fixing of coding standard violations](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Fixing-Errors-Automatically). To fix your code automatically, run phpcbf instead of phpcs:
+
+```
+vendor/bin/phpcbf --standard=ruleset.xml --extensions=php --tab-width=4 -sp src tests
+```
+
+Always remember to back up your code before performing automatic fixes and check the results with your own eyes as the automatic fixer can sometimes produce unwanted results.
+
+## Suppressing sniffs locally
+
+Selected sniffs in this standard marked by the 🚧 symbol can be suppressed for a specific piece of code using an annotation. Consider the following example:
+
+```php
+/**
+ * @param int $max
+ */
+public function createProgressBar($max = 0): ProgressBar
+{
+
+}
+```
+
+The parameter `$max` could have a native `int` scalar typehint. But because the method in the parent class does not have this typehint, so this one cannot have it either. PHP_CodeSniffer shows a following error:
+
+```
+----------------------------------------------------------------------
+FOUND 1 ERROR AFFECTING 1 LINE
+----------------------------------------------------------------------
+ 67 | ERROR | [x] Method ErrorsConsoleStyle::createProgressBar()
+    |       |     does not have parameter type hint for its parameter $max
+    |       |     but it should be possible to add it based on @param
+    |       |     annotation "int".
+    |       |     (SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint)
+```
+
+If we want to suppress this error instead of fixing it, we can take the error code (`SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint`) and use it with a `@phpcsSuppress` annotation like this:
+
+```php
+/**
+ * @phpcsSuppress SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+ * @param int $max
+ */
+public function createProgressBar($max = 0): ProgressBar
+{
+
+}
+```
+
+## Contributing
+
+To make this repository work on your machine, clone it and run these two commands in the root directory of the repository:
+
+```
+composer install
+bin/phing
+```
+
+After writing some code and editing or adding unit tests, run phing again to check that everything is OK:
+
+```
+bin/phing
+```
+
+We are always looking forward for your bugreports, feature requests and pull requests. Thank you.
+
+## Code of Conduct
+
+This project adheres to a [Contributor Code of Conduct](https://github.com/slevomat/coding-standard/blob/master/CODE_OF_CONDUCT.md). By participating in this project and its community, you are expected to uphold this code.
