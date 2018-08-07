@@ -8,8 +8,7 @@ import sqlite3
 from sqlite3 import Error
 import requests
 import time
-import urllib.parse
-
+import urllib.parse # python 3
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('../../config/config.cfg')
@@ -41,6 +40,7 @@ if __name__ == '__main__':
         '''
         for l in languages:
             for i in range(1, 11):
+                # python 3
                 target_url = ('https://api.github.com/search/repositories?' +
                               'q=topics%3A>0+language%3A{0}+pushed%3A>2017-06-01+'.format(urllib.parse.quote_plus(l)) +
                               'is%3Apublic+fork%3Afalse+archived%3Afalse+mirror%3Afalse&' +
