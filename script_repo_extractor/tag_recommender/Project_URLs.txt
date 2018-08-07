@@ -79,7 +79,6 @@ https://github.com/SpringSource/spring-roo
 https://github.com/SpringSource/spring-security-oauth
 https://github.com/Governance/s-ramp
 https://github.com/srt/asterisk-java
-https://github.com/apache/struts2
 https://github.com/apache/synapse
 https://github.com/apache/syncope
 https://github.com/apache/tapestry-5

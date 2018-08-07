@@ -1,0 +1,10 @@
+apache_maven.txt	apache-maven:build-tool:java:maven
+arquillian_arquillian-core.txt	integration-testing:java:jvm:test-automation:testing
+arquillian_arquillian-graphene.txt	java:jvm:selenium:testing:webdriver
+droolsjbpm_optaplanner.txt	branch-and-bound:constraint-programming:constraint-satisfaction-problem:constraint-solver:constraints:employee-rostering:java:metaheuristics:optimization:rostering:scheduling:simulated-annealing:solver:tabu-search:traveling-salesman:vehicle-routing-problem
+forge_core.txt	ide:java:javaee:jboss:productivity:productivity-booster
+hibernate_hibernate-search.txt	elasticsearch:hibernate:hibernate-search:java:lucene:orm
+hibernate_hibernate-validator.txt	bean-validation:hibernate:java
+Jasig_cas.txt	apache2:authentication:authorization:duosecurity:identity-provider:java:ldap-authentication:oauth2:open-source:openidconnect:saml2:spring-boot:spring-cloud:spring-framework:spring-webflow:sso:sso-authentication:thymeleaf:u2f-server:websso
+SpringSource_spring-data-commons.txt	data-access:ddd:framework:java:spring:spring-data
+SpringSource_spring-data-mongodb.txt	ddd:framework:java:mongodb:spring:spring-data
