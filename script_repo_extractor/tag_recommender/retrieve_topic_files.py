@@ -21,8 +21,6 @@ def write_file(path_file, data):
 
 
 if __name__ == "__main__":
-    print 'hello'
-    exit()
     path_ = "./output_url_json/"
     onlyfiles = [f for f in listdir(path_) if isfile(join(path_, f))]
     data_ = list()
