@@ -28,8 +28,11 @@ if __name__ == "__main__":
         # print load_file(path=path_ + f)[0]
         json_file = json.loads(load_file(path=path_ + f)[0])
         # print json_file["topics"]
-        if len(json_file["topics"]) != 0:
-            topics = [t for t in json_file["topics"]]
-            print f + "\t" + ":".join(topics)
-            data_.append(f + "\t" + ":".join(topics))
+        try:
+            if len(json_file["topics"]) != 0:
+                topics = [t for t in json_file["topics"]]
+                print f + "\t" + ":".join(topics)
+                data_.append('https://github.com/' + f.replace('_', '/').replace('.txt', '') + "\t" + ":".join(topics))
+        except KeyError:
+            print 'KeyError'
     write_file(path_file="./Topics_Projects.txt", data=data_)
